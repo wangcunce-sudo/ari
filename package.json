@@ -4,14 +4,29 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "upload:images": "node scripts/upload-media.mjs --type=images",
+    "upload:videos": "node scripts/upload-media.mjs --type=videos",
+    "upload:music": "node scripts/upload-media.mjs --type=music",
+    "upload:all": "node scripts/upload-media.mjs --type=all"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.2",
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.9.0",
+    "jose": "^6.2.2",
     "next": "16.2.1",
+    "next-cloudinary": "^6.17.5",
+    "prisma": "^6.19.2",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

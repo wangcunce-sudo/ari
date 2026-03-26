@@ -142,20 +142,12 @@ export default function Navbar() {
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-2 ml-4">
-                <button
-                  onClick={() => openAuth('login')}
-                  className="nav-pill px-4 py-2 text-xs tracking-widest uppercase text-white/80 hover:text-white"
-                >
-                  Sign In
-                </button>
-                <button
-                  onClick={() => openAuth('register')}
-                  className="sign-up-btn bg-white text-on-surface px-6 py-2 text-xs tracking-widest uppercase rounded-md hover:opacity-90 transition-opacity"
-                >
-                  Sign Up
-                </button>
-              </div>
+              <button
+                onClick={() => openAuth('login')}
+                className="sign-up-btn bg-white text-on-surface px-6 py-2 ml-4 text-xs tracking-widest uppercase rounded-md hover:opacity-90 transition-opacity"
+              >
+                Sign In
+              </button>
             )}
 
             {/* Cart */}

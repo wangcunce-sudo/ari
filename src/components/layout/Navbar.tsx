@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
+import { usePlaylistStore } from '@/store/playlistStore';
 import CartSidebar from './CartSidebar';
 import AuthModal from '@/components/auth/AuthModal';
 
@@ -22,6 +23,7 @@ export default function Navbar() {
   const { logout, init } = useAuthStore();
   const user = useAuthStore(s => s.user);
   const totalQty = useCartStore(s => s.totalQty());
+  const playlistCount = usePlaylistStore(s => s.tracks.length);
 
   // 初始化：用 cookie 恢复登录状态，拉取购物车
   useEffect(() => {
@@ -80,6 +82,14 @@ export default function Navbar() {
             </Link>
             <Link href="/store" className="nav-pill px-4 py-2 text-xs tracking-widest uppercase text-white/80">
               Store
+            </Link>
+            <Link href="/playlist" className="nav-pill px-4 py-2 text-xs tracking-widest uppercase text-white/80 relative">
+              Playlist
+              {playlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-tertiary text-white text-[8px] rounded-full flex items-center justify-center font-bold">
+                  {playlistCount > 99 ? '99+' : playlistCount}
+                </span>
+              )}
             </Link>
             <Link href="/#archive" className="nav-pill px-4 py-2 text-xs tracking-widest uppercase text-white/80">
               Archive
@@ -182,6 +192,15 @@ export default function Navbar() {
         <Link href="/store" className="flex flex-col items-center gap-1 text-on-surface/40">
           <span className="material-symbols-outlined">shopping_bag</span>
           <span className="font-sans text-[10px] tracking-widest uppercase">Store</span>
+        </Link>
+        <Link href="/playlist" className="flex flex-col items-center gap-1 text-on-surface/40 relative">
+          <span className="material-symbols-outlined">queue_music</span>
+          {playlistCount > 0 && (
+            <span className="absolute -top-1 right-1 w-3.5 h-3.5 bg-tertiary text-white text-[8px] rounded-full flex items-center justify-center font-bold">
+              {playlistCount > 99 ? '99+' : playlistCount}
+            </span>
+          )}
+          <span className="font-sans text-[10px] tracking-widest uppercase">Playlist</span>
         </Link>
         <button
           onClick={() => user ? setCartOpen(true) : openAuth('login')}

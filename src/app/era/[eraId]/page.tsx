@@ -76,6 +76,10 @@ export default async function EraPage({ params }: Props) {
           albumTitle={era.name}
           albumYear={era.year}
           spotifyUrl={spotifyMap[eraId]}
+          eraId={eraId}
+          eraAccentColor={era.accentColor}
+          eraHeroImage={era.heroImage}
+          eraName={era.name}
         />
       </section>
 

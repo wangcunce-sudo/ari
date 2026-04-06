@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import type { Track } from '@/types';
+import Link from 'next/link';
+import type { Track, PlaylistTrack } from '@/types';
+import { usePlaylistStore } from '@/store/playlistStore';
+import { useEraFavoritesStore } from '@/store/eraFavoritesStore';
 
 interface Props {
   tracks: Track[];
@@ -10,23 +13,80 @@ interface Props {
   albumTitle: string;
   albumYear: number;
   spotifyUrl?: string;
+  eraId?: string;
+  eraAccentColor?: string;
+  eraHeroImage?: string;
+  eraName?: string;
 }
 
-export default function EraPlayerSection({ tracks, accentColor, albumArt, albumTitle, albumYear, spotifyUrl }: Props) {
+export default function EraPlayerSection({ tracks, accentColor, albumArt, albumTitle, albumYear, spotifyUrl, eraId, eraAccentColor, eraHeroImage, eraName }: Props) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState('0:00');
   const [durationStr, setDurationStr] = useState('0:00');
+  const [toast, setToast] = useState('');
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  const addTrack = usePlaylistStore(s => s.addTrack);
+  const addTracksBulk = usePlaylistStore(s => s.addTracksBulk);
+  const hasTrack = usePlaylistStore(s => s.hasTrack);
+  const playlistTracks = usePlaylistStore(s => s.tracks);
+  const savedEras = useEraFavoritesStore(s => s.savedEras);
+  const toggleEra = useEraFavoritesStore(s => s.toggleEra);
+  const isEraSaved = eraId ? savedEras.some(e => e.id === eraId) : false;
+
   const currentTrack = tracks[currentIdx];
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 2000);
+  };
 
   const formatTime = (secs: number) => {
     if (isNaN(secs)) return '0:00';
     const m = Math.floor(secs / 60);
     const s = Math.floor(secs % 60);
     return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const makePlaylistTrack = (track: Track, idx: number): PlaylistTrack => ({
+    ...track,
+    id: `${eraId ?? 'unknown'}:${track.title}`,
+    eraId: eraId ?? 'unknown',
+    eraName: eraName ?? albumTitle,
+    eraYear: albumYear,
+    accentColor: eraAccentColor ?? accentColor,
+    albumArt,
+  });
+
+  const handleAddTrack = (track: Track, idx: number) => {
+    const pt = makePlaylistTrack(track, idx);
+    if (hasTrack(pt.id)) {
+      showToast('Already in playlist');
+      return;
+    }
+    addTrack(pt);
+    showToast('Added to playlist');
+  };
+
+  const handleSaveEra = () => {
+    if (!eraId || !eraName || !eraHeroImage) return;
+    const nowSaved = toggleEra({
+      id: eraId,
+      name: eraName,
+      year: albumYear,
+      accentColor: eraAccentColor ?? accentColor,
+      heroImage: eraHeroImage,
+    });
+    if (nowSaved) {
+      // 首次保存 Era：批量添加所有曲目到播放列表
+      const playlistTracks = tracks.map((t, i) => makePlaylistTrack(t, i));
+      addTracksBulk(playlistTracks);
+      showToast(`${eraName} saved — ${playlistTracks.length} tracks added`);
+    } else {
+      showToast(`${eraName} unsaved`);
+    }
   };
 
   const loadTrack = useCallback((idx: number, autoPlay = false) => {
@@ -195,9 +255,32 @@ export default function EraPlayerSection({ tracks, accentColor, albumArt, albumT
               Listen on Spotify
             </a>
           )}
-          <button className="border border-on-surface px-6 py-3 font-body font-bold uppercase tracking-[0.15em] text-xs hover:bg-surface-container-low transition-all duration-300">
-            Save Era
-          </button>
+          {eraId && (
+            <button
+              onClick={handleSaveEra}
+              className={`flex items-center gap-2 border px-6 py-3 font-body font-bold uppercase tracking-[0.15em] text-xs transition-all duration-300 ${
+                isEraSaved
+                  ? 'border-current'
+                  : 'border-on-surface hover:bg-surface-container-low'
+              }`}
+              style={isEraSaved ? { borderColor: accentColor, color: accentColor } : {}}
+            >
+              <span
+                className="material-symbols-outlined text-sm"
+                style={isEraSaved ? { fontVariationSettings: '"FILL" 1' } : {}}
+              >
+                {isEraSaved ? 'bookmark_added' : 'bookmark_add'}
+              </span>
+              {isEraSaved ? 'Saved' : 'Save Era'}
+            </button>
+          )}
+          <Link
+            href="/playlist"
+            className="flex items-center gap-2 border border-on-surface/30 px-6 py-3 font-body font-bold uppercase tracking-[0.15em] text-xs text-on-surface-variant hover:bg-surface-container-low transition-all duration-300"
+          >
+            <span className="material-symbols-outlined text-sm">queue_music</span>
+            Playlist
+          </Link>
         </div>
       </div>
 
@@ -212,16 +295,20 @@ export default function EraPlayerSection({ tracks, accentColor, albumArt, albumT
         <div className="space-y-1 max-h-[560px] overflow-y-auto pr-1 tracklist-scroll">
           {tracks.map((track, idx) => {
             const isActive = idx === currentIdx;
+            const trackId = `${eraId ?? 'unknown'}:${track.title}`;
+            const inPlaylist = playlistTracks.some(t => t.id === trackId);
             return (
               <div
                 key={idx}
-                onClick={() => goToAndPlay(idx)}
-                className={`flex items-center gap-4 px-4 py-3 cursor-pointer rounded-sm transition-colors ${
+                className={`flex items-center gap-4 px-4 py-3 cursor-pointer rounded-sm transition-colors group/track ${
                   isActive ? '' : 'hover:bg-surface-container/50'
                 }`}
                 style={isActive ? { backgroundColor: `rgba(${hexToRgb(accentColor)},0.12)` } : {}}
               >
-                <span className="w-5 text-center text-xs font-body text-on-surface-variant/60 flex-shrink-0">
+                <span
+                  onClick={() => goToAndPlay(idx)}
+                  className="w-5 text-center text-xs font-body text-on-surface-variant/60 flex-shrink-0"
+                >
                   {isActive ? (
                     <span
                       className="material-symbols-outlined text-sm"
@@ -234,6 +321,7 @@ export default function EraPlayerSection({ tracks, accentColor, albumArt, albumT
                   )}
                 </span>
                 <span
+                  onClick={() => goToAndPlay(idx)}
                   className="flex-grow text-sm font-body truncate"
                   style={isActive ? { color: accentColor, fontWeight: 500 } : {}}
                 >
@@ -242,11 +330,30 @@ export default function EraPlayerSection({ tracks, accentColor, albumArt, albumT
                 <span className="text-xs font-body text-on-surface-variant/50 flex-shrink-0">
                   {track.duration || ''}
                 </span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleAddTrack(track, idx); }}
+                  className="opacity-0 group-hover/track:opacity-100 transition-opacity flex-shrink-0 p-0.5"
+                  title={inPlaylist ? 'Already in playlist' : 'Add to playlist'}
+                >
+                  <span
+                    className="material-symbols-outlined text-base"
+                    style={{ color: inPlaylist ? accentColor : undefined, fontVariationSettings: inPlaylist ? '"FILL" 1' : '"FILL" 0' }}
+                  >
+                    playlist_add
+                  </span>
+                </button>
               </div>
             );
           })}
         </div>
       </div>
+
+      {/* Toast */}
+      {toast && (
+        <div className="toast fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 bg-on-surface text-surface px-8 py-3 text-xs tracking-widest uppercase z-50 whitespace-nowrap show">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

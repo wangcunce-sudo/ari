@@ -288,6 +288,41 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ===== Neon Glow for Saved Era Cards ===== */
+@keyframes neonGlowPulse {
+  0%, 100% {
+    opacity: 0.5;
+    filter: blur(40px);
+  }
+  50% {
+    opacity: 0.75;
+    filter: blur(50px);
+  }
+}
+
+@keyframes neonBorderSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.neon-glow-pulse {
+  animation: neonGlowPulse 3s ease-in-out infinite;
+}
+
+.neon-glow-border > div {
+  animation: neonBorderSpin 4s linear infinite;
+}
+
+/* Hover: enhance glow — NeonGlow is a sibling before the Link, so use :has() */
+.neon-wrapper:hover .neon-glow-pulse {
+  opacity: 0.95 !important;
+  filter: blur(60px) !important;
+  transform: scale(1.08);
+}
+.neon-wrapper:hover .neon-glow-border {
+  opacity: 1;
+}
+
 /* ===== Hero 入场动画（串行，一列完成才触发下一列） ===== */
 @keyframes panelReveal {
   0%   { clip-path: inset(0 100% 0 0); }

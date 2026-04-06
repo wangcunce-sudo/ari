@@ -5,6 +5,15 @@ export interface Track {
   duration?: string;
 }
 
+export interface PlaylistTrack extends Track {
+  id: string;           // 唯一标识: `${eraId}:${title}`
+  eraId: string;        // 所属 Era
+  eraName: string;      // Era 显示名
+  eraYear: number;      // Era 年份
+  accentColor: string;  // Era 主题色
+  albumArt?: string;    // 专辑封面
+}
+
 export interface MusicVideo {
   title: string;
   src: string;        // local /videos/xxx.mp4 or YouTube URL

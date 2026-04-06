@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Serif, Manrope } from "next/font/google";
 import "./globals.css";
+import StoreHydration from "@/components/StoreHydration";
 
 const notoSerif = Noto_Serif({
   subsets: ["latin"],
@@ -47,7 +48,7 @@ export default function RootLayout({
           fontFamily: "var(--font-manrope), sans-serif",
         }}
       >
-        {children}
+        <StoreHydration>{children}</StoreHydration>
       </body>
     </html>
   );

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCartStore } from '@/store/cartStore';
+import { usePlaylistStore } from '@/store/playlistStore';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -14,6 +15,7 @@ export default function EraNavbar() {
   const router = useRouter();
   const user = useAuthStore(s => s.user);
   const totalQty = useCartStore(s => s.totalQty());
+  const playlistCount = usePlaylistStore(s => s.tracks.length);
   const [cartOpen, setCartOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -55,6 +57,17 @@ export default function EraNavbar() {
             className="text-[11px] font-bold tracking-[0.2em] uppercase hover:opacity-60 transition-opacity text-on-surface"
           >
             Archive
+          </Link>
+          <Link
+            href="/playlist"
+            className="relative text-[11px] font-bold tracking-[0.2em] uppercase hover:opacity-60 transition-opacity text-on-surface"
+          >
+            Playlist
+            {playlistCount > 0 && (
+              <span className="absolute -top-1.5 -right-2 w-3.5 h-3.5 bg-tertiary text-white text-[8px] rounded-full flex items-center justify-center font-bold">
+                {playlistCount > 99 ? '99+' : playlistCount}
+              </span>
+            )}
           </Link>
           <Link
             href="/#visuals"

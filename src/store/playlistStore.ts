@@ -7,7 +7,6 @@ import { useAuthStore } from './authStore';
 
 interface PlaylistStore {
   tracks: PlaylistTrack[];
-  _synced: boolean; // 标记是否已和远程同步过
 
   // Actions
   addTrack: (track: PlaylistTrack) => void;
@@ -20,19 +19,20 @@ interface PlaylistStore {
   // Remote sync
   fetchFromRemote: () => Promise<void>;
   syncToRemote: () => Promise<void>;
+
+  // Internal
+  _clearLocal: () => void;
 }
 
 export const usePlaylistStore = create<PlaylistStore>()(
   persist(
     (set, get) => ({
       tracks: [],
-      _synced: false,
 
       addTrack: (track) => {
         const exists = get().tracks.some((t) => t.id === track.id);
         if (exists) return;
         set((s) => ({ tracks: [...s.tracks, track] }));
-        // 异步同步到远程（fire-and-forget）
         get().syncToRemote();
       },
 
@@ -64,7 +64,7 @@ export const usePlaylistStore = create<PlaylistStore>()(
         get().syncToRemote();
       },
 
-      /** 从远程数据库拉取播放列表并合并到本地 */
+      /** 从远程拉取，直接替换本地数据（登录态专用） */
       fetchFromRemote: async () => {
         const user = useAuthStore.getState().user;
         if (!user) return;
@@ -74,32 +74,14 @@ export const usePlaylistStore = create<PlaylistStore>()(
           if (!res.ok) return;
 
           const remoteTracks: PlaylistTrack[] = await res.json();
-          if (remoteTracks.length === 0) {
-            // 远程为空，把本地数据推上去
-            const localTracks = get().tracks;
-            if (localTracks.length > 0) {
-              await get().syncToRemote();
-            }
-            set({ _synced: true });
-            return;
-          }
-
-          // 合并策略：以远程为主，本地去重追加
-          const remoteIds = new Set(remoteTracks.map((t) => t.id));
-          const localOnly = get().tracks.filter((t) => !remoteIds.has(t.id));
-          const merged = [...remoteTracks, ...localOnly];
-
-          set({ tracks: merged, _synced: true });
-          // 如果有本地独有的，也同步上去
-          if (localOnly.length > 0) {
-            await get().syncToRemote();
-          }
+          // 登录态：远程数据为准，直接替换
+          set({ tracks: remoteTracks });
         } catch (e) {
           console.warn('[playlistStore] fetchFromRemote failed:', e);
         }
       },
 
-      /** 将当前本地播放列表全量同步到远程 */
+      /** 全量同步到远程 */
       syncToRemote: async () => {
         const user = useAuthStore.getState().user;
         if (!user) return;
@@ -114,6 +96,11 @@ export const usePlaylistStore = create<PlaylistStore>()(
         } catch (e) {
           console.warn('[playlistStore] syncToRemote failed:', e);
         }
+      },
+
+      /** 清空本地 localStorage 缓存（登出时调用） */
+      _clearLocal: () => {
+        set({ tracks: [] });
       },
     }),
     { name: 'ariana-playlist', skipHydration: true }

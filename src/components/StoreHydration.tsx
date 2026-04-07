@@ -7,26 +7,30 @@ import { useAuthStore } from '@/store/authStore';
 
 export default function StoreHydration({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    // Step 1: 从 localStorage 恢复本地状态
-    usePlaylistStore.persist.rehydrate();
-    useEraFavoritesStore.persist.rehydrate();
+    const init = async () => {
+      // 初始化 auth（从 cookie 恢复登录态）
+      await useAuthStore.getState().init();
 
-    // Step 2: 初始化 auth（从 cookie 恢复登录态）
-    useAuthStore.getState().init().then(() => {
       const user = useAuthStore.getState().user;
-      if (!user) return;
 
-      const playlistSynced = usePlaylistStore.getState()._synced;
-      const eraSynced = useEraFavoritesStore.getState()._synced;
+      if (user) {
+        // 登录态：清空 localStorage 缓存，完全从远程拉取
+        usePlaylistStore.setState({ tracks: [] });
+        useEraFavoritesStore.setState({ savedEras: [] });
 
-      // Step 3: 登录状态下，从远程拉取并合并
-      if (!playlistSynced) {
-        usePlaylistStore.getState().fetchFromRemote();
+        // 并行拉取远程数据
+        await Promise.all([
+          usePlaylistStore.getState().fetchFromRemote(),
+          useEraFavoritesStore.getState().fetchFromRemote(),
+        ]);
+      } else {
+        // 游客态：从 localStorage 恢复
+        usePlaylistStore.persist.rehydrate();
+        useEraFavoritesStore.persist.rehydrate();
       }
-      if (!eraSynced) {
-        useEraFavoritesStore.getState().fetchFromRemote();
-      }
-    });
+    };
+
+    init();
   }, []);
 
   return <>{children}</>;

@@ -2,6 +2,8 @@
 
 import { create } from 'zustand';
 import type { ShippingInfo } from '@/types';
+import { usePlaylistStore } from './playlistStore';
+import { useEraFavoritesStore } from './eraFavoritesStore';
 
 export interface SavedAddress extends ShippingInfo {
   id: string;
@@ -64,7 +66,9 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     const data = await res.json();
     if (!res.ok) return { ok: false, error: data.error };
     set({ user: data.user });
-    // 注册后同步购物车（拉取空车）
+    // 注册成功：清空本地缓存
+    usePlaylistStore.setState({ tracks: [] });
+    useEraFavoritesStore.setState({ savedEras: [] });
     return { ok: true };
   },
 
@@ -78,12 +82,20 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     const data = await res.json();
     if (!res.ok) return { ok: false, error: data.error };
     set({ user: data.user });
+    // 登录成功：清空本地缓存，从远程拉取该用户数据
+    usePlaylistStore.setState({ tracks: [] });
+    useEraFavoritesStore.setState({ savedEras: [] });
+    usePlaylistStore.getState().fetchFromRemote();
+    useEraFavoritesStore.getState().fetchFromRemote();
     return { ok: true };
   },
 
   logout: async () => {
     await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
     set({ user: null });
+    // 登出：清空用户数据，恢复空白状态
+    usePlaylistStore.setState({ tracks: [] });
+    useEraFavoritesStore.setState({ savedEras: [] });
   },
 
   refreshUser: async () => {

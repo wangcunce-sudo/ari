@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useEraFavoritesStore } from '@/store/eraFavoritesStore';
 import { usePlaylistStore } from '@/store/playlistStore';
-import { useAuthStore } from './authStore';
+import { useAuthStore } from '@/store/authStore';
 
 export default function StoreHydration({ children }: { children: React.ReactNode }) {
   useEffect(() => {

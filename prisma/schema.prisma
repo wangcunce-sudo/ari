@@ -18,9 +18,11 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  cartItems  CartItem[]
-  orders     Order[]
-  addresses  Address[]
+  cartItems       CartItem[]
+  orders          Order[]
+  addresses       Address[]
+  savedEras       SavedEra[]
+  playlistTracks  PlaylistTrack[]
 }
 
 model CartItem {
@@ -79,5 +81,39 @@ model Address {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+}
+
+model SavedEra {
+  id          String  @id @default(cuid())
+  userId      String
+  eraId       String
+  name        String
+  year        Int
+  accentColor String
+  heroImage   String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eraId])
+  @@index([userId])
+}
+
+model PlaylistTrack {
+  id          String  @id @default(cuid())
+  userId      String
+  trackId     String
+  eraId       String
+  eraName     String
+  eraYear     Int
+  accentColor String
+  title       String
+  audioSrc    String?
+  albumArt    String?
+  sortIndex   Int     @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, trackId])
   @@index([userId])
 }
